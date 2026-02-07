@@ -26,7 +26,44 @@ const isAdmin = (req, res, next) => {
     }
 };
 
+const isInstructor = (req, res, next) => {
+    if (req.user && req.user.role === 'INSTRUCTOR') {
+        next();
+    } else {
+        return res.status(403).json({ error: 'Access denied. Instructors only.' });
+    }
+};
+
+const isLearner = (req, res, next) => {
+    if (req.user && req.user.role === 'LEARNER') {
+        next();
+    } else {
+        return res.status(403).json({ error: 'Access denied. Learners only.' });
+    }
+};
+
+// Optional auth - attach user if token present, but don't fail if missing
+const optionalAuth = (req, res, next) => {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+
+    if (!token) {
+        return next();
+    }
+
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        req.user = decoded;
+    } catch (error) {
+        // Token invalid, continue without user
+    }
+    next();
+};
+
 module.exports = {
     verifyToken,
-    isAdmin
+    isAdmin,
+    isInstructor,
+    isLearner,
+    optionalAuth
 };

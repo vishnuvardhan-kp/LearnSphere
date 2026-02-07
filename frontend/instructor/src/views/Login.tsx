@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock } from 'lucide-react';
 
 import { useUser } from '../context/UserContext';
+import { API_ENDPOINTS } from '../config/api';
 
 export const Login = () => {
     const [role, setRole] = React.useState<'company' | 'influencer'>('company');
@@ -20,7 +21,7 @@ export const Login = () => {
         setError('');
 
         try {
-            const response = await fetch('http://127.0.0.1:5000/api/login', {
+            const response = await fetch(API_ENDPOINTS.LOGIN, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email, password, role })

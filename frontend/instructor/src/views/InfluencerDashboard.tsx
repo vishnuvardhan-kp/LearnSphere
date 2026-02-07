@@ -4,6 +4,7 @@ import { Search, LayoutGrid, List as ListIcon, Plus, Share2, Edit3, X, Video, Cl
 import { CourseEditor } from '../components/CourseEditor';
 import { useLocation } from 'react-router-dom';
 import { useUser } from '../context/UserContext';
+import { API_ENDPOINTS } from '../config/api';
 
 export const InfluencerDashboard = () => {
     const location = useLocation();
@@ -66,7 +67,7 @@ export const InfluencerDashboard = () => {
             setLoadingData(true);
             try {
                 // Fetch Courses
-                const coursesRes = await fetch('http://127.0.0.1:5000/api/courses');
+                const coursesRes = await fetch(API_ENDPOINTS.COURSES);
                 const coursesData = await coursesRes.json();
 
                 // Filter courses by the logged-in instructor's name
@@ -74,7 +75,7 @@ export const InfluencerDashboard = () => {
                 setCourses(myCourses);
 
                 // Fetch Reporting/Participants
-                const participantsRes = await fetch('http://127.0.0.1:5000/api/participants');
+                const participantsRes = await fetch(API_ENDPOINTS.PARTICIPANTS);
                 const participantsData = await participantsRes.json();
                 // Map backend participants to frontend reporting format
                 const mappedParticipants = participantsData.map((p: any) => ({
@@ -121,7 +122,7 @@ export const InfluencerDashboard = () => {
         };
 
         try {
-            const response = await fetch('http://127.0.0.1:5000/api/courses', {
+            const response = await fetch(API_ENDPOINTS.COURSES, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(newCourseData)
@@ -172,7 +173,7 @@ export const InfluencerDashboard = () => {
                 image: updatedCourse.image
             };
 
-            const response = await fetch(`http://127.0.0.1:5000/api/courses/${updatedCourse.id}`, {
+            const response = await fetch(`${API_ENDPOINTS.COURSES}/${updatedCourse.id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(body)

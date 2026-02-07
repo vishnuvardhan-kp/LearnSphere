@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { API_ENDPOINTS } from '../config/api';
 
 interface UserProfile {
     _id: string;
@@ -66,7 +67,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 });
             }
 
-            const response = await fetch('http://127.0.0.1:5000/api/onboarding/profile', {
+            const response = await fetch(API_ENDPOINTS.PROFILE, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }

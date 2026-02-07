@@ -1,6 +1,7 @@
 import { DashboardLayout } from '../components/DashboardLayout';
 import { UserCheck, Search, Filter, MessageSquare, ExternalLink, Youtube, Instagram, Twitter, Loader2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { API_ENDPOINTS } from '../config/api';
 
 export const CompanyInfluencers = () => {
     const [searchTerm, setSearchTerm] = useState('');
@@ -11,7 +12,7 @@ export const CompanyInfluencers = () => {
         const fetchInfluencers = async () => {
             try {
                 const token = localStorage.getItem('botfree_token');
-                const res = await fetch('http://localhost:5000/api/onboarding/influencers/all', {
+                const res = await fetch(API_ENDPOINTS.ONBOARDING_INFLUENCERS, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 if (res.ok) {

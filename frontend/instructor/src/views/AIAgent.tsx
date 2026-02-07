@@ -1,6 +1,7 @@
 import React from 'react';
 import { Target, Zap, Shield, Plus, Mic, ChevronLeft, MoreHorizontal, Menu } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { API_ENDPOINTS } from '../config/api';
 
 export const AIAgent = () => {
     const [activeTab, setActiveTab] = React.useState('strategy');
@@ -71,7 +72,7 @@ export const AIAgent = () => {
 
         try {
             const token = localStorage.getItem('botfree_token');
-            const res = await fetch('http://localhost:5000/api/ai/chat', {
+            const res = await fetch(API_ENDPOINTS.AI_CHAT, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

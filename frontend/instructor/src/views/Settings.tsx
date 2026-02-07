@@ -4,6 +4,7 @@ import { User, Shield, Bell, CreditCard, Mail, Lock, Camera } from 'lucide-react
 
 import { useUser } from '../context/UserContext';
 import { useState, useEffect } from 'react';
+import { API_ENDPOINTS } from '../config/api';
 
 export const Settings = () => {
     const [activeTab, setActiveTab] = React.useState('profile');
@@ -37,7 +38,7 @@ export const Settings = () => {
 
         try {
             const token = localStorage.getItem('botfree_token');
-            const response = await fetch('http://localhost:5000/api/onboarding/update', {
+            const response = await fetch(API_ENDPOINTS.ONBOARDING_UPDATE, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',

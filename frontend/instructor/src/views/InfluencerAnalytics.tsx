@@ -2,6 +2,7 @@ import { DashboardLayout } from '../components/DashboardLayout';
 import { UserCheck, TrendingUp, BarChart3, Star, Target, RefreshCw } from 'lucide-react';
 import { useUser } from '../context/UserContext';
 import { useMemo, useState } from 'react';
+import { API_ENDPOINTS } from '../config/api';
 
 export const InfluencerAnalytics = () => {
     const { profile, refreshProfile } = useUser();
@@ -16,7 +17,7 @@ export const InfluencerAnalytics = () => {
         setRefreshing(true);
         try {
             const token = localStorage.getItem('botfree_token');
-            const res = await fetch('http://localhost:5000/api/onboarding/social/refresh', {
+            const res = await fetch(API_ENDPOINTS.SOCIAL_REFRESH, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

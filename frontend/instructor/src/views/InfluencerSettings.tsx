@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { DashboardLayout } from '../components/DashboardLayout';
 import { User, Shield, Bell, Instagram, Youtube, Lock, X } from 'lucide-react';
 import { useUser } from '../context/UserContext';
+import { API_ENDPOINTS } from '../config/api';
 
 export const InfluencerSettings = () => {
     const [activeTab, setActiveTab] = React.useState('profile');
@@ -39,7 +40,7 @@ export const InfluencerSettings = () => {
         setConnecting(true);
         try {
             const token = localStorage.getItem('botfree_token');
-            const response = await fetch('http://localhost:5000/api/onboarding/social/connect', {
+            const response = await fetch(API_ENDPOINTS.SOCIAL_CONNECT, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -76,7 +77,7 @@ export const InfluencerSettings = () => {
         const platform = disconnectModal.platform;
         try {
             const token = localStorage.getItem('botfree_token');
-            const response = await fetch('http://localhost:5000/api/onboarding/social/disconnect', {
+            const response = await fetch(API_ENDPOINTS.SOCIAL_DISCONNECT, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

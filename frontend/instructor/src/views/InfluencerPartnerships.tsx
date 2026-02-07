@@ -4,6 +4,7 @@ import {
     Search, Filter, Building2, MapPin, DollarSign,
     Send, Check, Briefcase, Users
 } from 'lucide-react';
+import { API_ENDPOINTS } from '../config/api';
 
 export const InfluencerPartnerships = () => {
     const [companies, setCompanies] = useState<any[]>([]);
@@ -16,7 +17,7 @@ export const InfluencerPartnerships = () => {
         const fetchCompanies = async () => {
             try {
                 const token = localStorage.getItem('botfree_token');
-                const res = await fetch('http://localhost:5000/api/onboarding/companies/all', {
+                const res = await fetch(API_ENDPOINTS.ONBOARDING_COMPANIES, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
 

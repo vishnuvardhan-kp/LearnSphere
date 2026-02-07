@@ -5,6 +5,7 @@ import {
     ArrowLeft, ArrowRight, DollarSign, Target, Search, UserCheck,
     Youtube, Instagram, Twitter, Loader2, Check
 } from 'lucide-react';
+import { API_ENDPOINTS } from '../config/api';
 
 export const CreateCampaign = () => {
     const navigate = useNavigate();
@@ -30,7 +31,7 @@ export const CreateCampaign = () => {
         const fetchInfluencers = async () => {
             try {
                 const token = localStorage.getItem('botfree_token');
-                const res = await fetch('http://localhost:5000/api/onboarding/influencers/all', {
+                const res = await fetch(API_ENDPOINTS.ONBOARDING_INFLUENCERS, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 if (res.ok) {

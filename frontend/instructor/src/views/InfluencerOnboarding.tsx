@@ -1,6 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { GraduationCap, BookOpen, PenTool, Check, ChevronRight, ChevronLeft, Target, Users2, Sparkles } from 'lucide-react';
+import { API_ENDPOINTS } from '../config/api';
 
 export const InfluencerOnboarding = () => {
     const [step, setStep] = React.useState(1);
@@ -25,7 +26,7 @@ export const InfluencerOnboarding = () => {
             setLoading(true);
             try {
                 const token = localStorage.getItem('botfree_token');
-                const response = await fetch('http://localhost:5000/api/onboarding/details', {
+                const response = await fetch(API_ENDPOINTS.ONBOARDING_DETAILS, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
