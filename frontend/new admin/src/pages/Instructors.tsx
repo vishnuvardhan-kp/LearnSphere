@@ -71,32 +71,98 @@ const Instructors = () => {
         return matchesSearch && matchesStatus;
     });
 
-    const handleAddInstructor = async () => {
-        if (!newInstructor.name || !newInstructor.email || !newInstructor.password || !newInstructor.confirmPassword) return;
+    const [editingId, setEditingId] = useState<number | null>(null);
 
-        if (newInstructor.password !== newInstructor.confirmPassword) {
+    const handleEdit = (instructor: Instructor) => {
+        setEditingId(instructor.id);
+        setNewInstructor({
+            name: instructor.name,
+            email: instructor.email,
+            specialization: instructor.specialization,
+            role: instructor.role,
+            password: '',
+            confirmPassword: ''
+        });
+        setShowAddModal(true);
+    };
+
+    const handleDelete = async (id: number) => {
+        if (!window.confirm("Are you sure you want to delete this instructor?")) return;
+        try {
+            await api.delete(`/users/${id}`);
+            setInstructors(prev => prev.filter(i => i.id !== id));
+        } catch (error: any) {
+            console.error('Error deleting instructor:', error);
+            const errorMsg = error.response?.data?.error || error.message || 'Failed to delete instructor';
+            alert(`Error: ${errorMsg}`);
+        }
+    };
+
+    const handleSaveInstructor = async () => {
+        if (!newInstructor.name || !newInstructor.email) {
+            alert("Name and Email are required");
+            return;
+        }
+
+        // Create Mode Validation
+        if (!editingId && (!newInstructor.password || !newInstructor.confirmPassword)) {
+            alert("Password is required for new instructors");
+            return;
+        }
+
+        if (newInstructor.password && newInstructor.password !== newInstructor.confirmPassword) {
             alert("Passwords do not match!");
             return;
         }
 
         try {
-            await api.post('/users/instructors', {
-                name: newInstructor.name,
-                email: newInstructor.email,
-                password: newInstructor.password,
-                // specialization is not in schema yet, sending generic
-                bio: newInstructor.specialization // repurposing bio if supported or just ignore
-            });
+            if (editingId) {
+                // Update
+                await api.put(`/users/${editingId}`, {
+                    name: newInstructor.name,
+                    email: newInstructor.email,
+                    bio: newInstructor.specialization
+                });
+            } else {
+                // Create
+                await api.post('/users/instructors', {
+                    name: newInstructor.name,
+                    email: newInstructor.email,
+                    password: newInstructor.password,
+                    bio: newInstructor.specialization
+                });
+            }
 
             // Refresh list
             fetchInstructors();
             setNewInstructor({ name: '', email: '', specialization: '', role: 'Instructor', password: '', confirmPassword: '' });
+            setEditingId(null);
             setShowAddModal(false);
-        } catch (error) {
-            console.error('Error adding instructor:', error);
-            alert('Failed to add instructor. Email might be taken.');
+        } catch (error: any) {
+            console.error('Error saving instructor:', error);
+            alert(error.response?.data?.error || 'Failed to save instructor.');
         }
     };
+
+    // ... inside Render ...
+    // Update Add Button to trigger clear state
+    const openAddModal = () => {
+        setEditingId(null);
+        setNewInstructor({ name: '', email: '', specialization: '', role: 'Instructor', password: '', confirmPassword: '' });
+        setShowAddModal(true);
+    };
+
+    // ... inside JSX ...
+    // Header Button
+    // onClick={openAddModal}
+
+    // Table Actions
+    // <button onClick={() => handleEdit(instructor)} ...> <Edit ... /> </button>
+    // <button onClick={() => handleDelete(instructor.id)} ...> <Trash2 ... /> </button>
+
+    // Modal Title: {editingId ? 'Edit Instructor' : 'Add New Instructor'}
+    // Modal Password Fields: logic to hide if editingId is set
+    // Modal Submit Button: onClick={handleSaveInstructor} -> {editingId ? 'Update Instructor' : 'Add Instructor'}
 
     if (loading) {
         return <div className="min-h-screen flex items-center justify-center">Loading Instructors...</div>;
@@ -124,7 +190,7 @@ const Instructors = () => {
                                 />
                             </div>
                             <button
-                                onClick={() => setShowAddModal(true)}
+                                onClick={openAddModal}
                                 className="btn-primary flex items-center gap-2 px-4 py-2 text-sm shadow-blue-500/20"
                             >
                                 <Plus className="w-4 h-4" />
@@ -260,10 +326,16 @@ const Instructors = () => {
                                         </td>
                                         <td className="py-4 px-6 text-right">
                                             <div className="flex justify-end gap-2">
-                                                <button className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-[#0ea5e9] transition-colors">
+                                                <button
+                                                    onClick={() => handleEdit(instructor)}
+                                                    className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-[#0ea5e9] transition-colors"
+                                                >
                                                     <Edit className="w-4 h-4" />
                                                 </button>
-                                                <button className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-red-500 transition-colors">
+                                                <button
+                                                    onClick={() => handleDelete(instructor.id)}
+                                                    className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-red-500 transition-colors"
+                                                >
                                                     <Trash2 className="w-4 h-4" />
                                                 </button>
                                             </div>
@@ -363,12 +435,12 @@ const Instructors = () => {
                                 Cancel
                             </button>
                             <button
-                                onClick={handleAddInstructor}
-                                disabled={!newInstructor.name || !newInstructor.email || !newInstructor.password || !newInstructor.confirmPassword}
+                                onClick={handleSaveInstructor}
+                                disabled={!newInstructor.name || !newInstructor.email || (!editingId && (!newInstructor.password || !newInstructor.confirmPassword))}
                                 className="px-5 py-2.5 rounded-xl font-bold text-sm text-white bg-[#0ea5e9] hover:bg-[#0284c7] shadow-lg shadow-blue-500/30 hover:shadow-blue-500/40 active:scale-95 transition-all flex items-center gap-2 disabled:opacity-50 disabled:pointer-events-none"
                             >
                                 <Check className="w-4 h-4" />
-                                Add Instructor
+                                {editingId ? 'Update Instructor' : 'Add Instructor'}
                             </button>
                         </div>
                     </div>

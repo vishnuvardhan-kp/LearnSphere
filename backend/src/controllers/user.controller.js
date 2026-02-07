@@ -139,6 +139,16 @@ const createInstructor = async (req, res) => {
         `;
 
         const result = await pool.query(query, [name, email, hashedPassword]);
+
+        // Send email with credentials
+        const { sendInstructorCredentials } = require('../services/email.service');
+        try {
+            await sendInstructorCredentials(email, name, password);
+        } catch (emailError) {
+            console.error('Failed to send email:', emailError);
+            // Don't fail the request, just log it
+        }
+
         res.status(201).json(result.rows[0]);
     } catch (error) {
         if (error.code === '23505') { // Unique violation
@@ -149,10 +159,91 @@ const createInstructor = async (req, res) => {
     }
 };
 
+
+// Update Instructor
+const updateInstructor = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { name, email, bio } = req.body; // Specialization/Bio
+
+        // Simple validation
+        if (!name || !email) {
+            return res.status(400).json({ error: 'Name and email are required' });
+        }
+
+        const query = `
+            UPDATE users 
+            SET name = $1, email = $2 
+            WHERE id = $3 AND role = 'INSTRUCTOR'
+            RETURNING id, name, email, role
+        `;
+
+        const result = await pool.query(query, [name, email, id]);
+
+        if (result.rowCount === 0) {
+            return res.status(404).json({ error: 'Instructor not found' });
+        }
+
+        res.json(result.rows[0]);
+    } catch (error) {
+        if (error.code === '23505') { // Unique violation
+            return res.status(400).json({ error: 'Email already exists' });
+        }
+        console.error('Error updating instructor:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+};
+
+// Delete Instructor
+const deleteInstructor = async (req, res) => {
+    try {
+        const { id } = req.params;
+        console.log(`[DELETE] Request to delete instructor ID: ${id}`);
+
+        // 1. Check if user exists and get role
+        const userQuery = `SELECT id, role FROM users WHERE id = $1`;
+        const userRes = await pool.query(userQuery, [id]);
+
+        if (userRes.rowCount === 0) {
+            console.log(`[DELETE] User ID ${id} not found in DB`);
+            return res.status(404).json({ error: `User with ID ${id} not found` });
+        }
+
+        const user = userRes.rows[0];
+        console.log(`[DELETE] Found user:`, user);
+
+        // 2. Check role
+        if (user.role !== 'INSTRUCTOR') {
+            console.log(`[DELETE] User role mismatch: ${user.role}`);
+            return res.status(400).json({ error: `User exists but is not an INSTRUCTOR (Role: ${user.role})` });
+        }
+
+        // 3. Check dependencies
+        const checkQuery = `SELECT id FROM courses WHERE course_admin_id = $1`;
+        const checkRes = await pool.query(checkQuery, [id]);
+
+        if (checkRes.rowCount > 0) {
+            return res.status(400).json({ error: 'Cannot delete instructor who has assigned courses. Reassign courses first.' });
+        }
+
+        // 4. Delete
+        const deleteQuery = `DELETE FROM users WHERE id = $1 RETURNING id`;
+        await pool.query(deleteQuery, [id]);
+
+        console.log(`[DELETE] Successfully deleted user ${id}`);
+        res.json({ message: 'Instructor deleted successfully' });
+    } catch (error) {
+        console.error('Error deleting instructor:', error);
+        res.status(500).json({ error: 'Internal server error: ' + error.message });
+    }
+};
+
 module.exports = {
     listUsers,
     toggleUserStatus,
     getLearners,
     getInstructors,
-    createInstructor
+    createInstructor,
+    updateInstructor,
+    deleteInstructor
 };
