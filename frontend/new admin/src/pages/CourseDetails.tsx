@@ -81,11 +81,17 @@ const CourseDetails = () => {
                 duration: editForm.duration,
                 lessons: editForm.lessons,
                 tags: editForm.tags.split(',').map(t => t.trim()).filter(Boolean),
-                status: editForm.status,
                 video_link: editForm.videoLink
             };
 
             await api.put(`/courses/${id}`, updatedData);
+
+            // Handle status update separately if changed
+            if (editForm.status !== course.status) {
+                await api.patch(`/courses/${id}/publish`, {
+                    is_published: editForm.status === 'published'
+                });
+            }
 
             // Optimistic update
             setCourse({
@@ -111,7 +117,11 @@ const CourseDetails = () => {
         if (!course || !id) return;
         const newStatus = course.status === 'published' ? 'draft' : 'published';
         try {
-            await api.put(`/courses/${id}`, { status: newStatus });
+            // Use the correct endpoint for publishing
+            await api.patch(`/courses/${id}/publish`, {
+                is_published: newStatus === 'published'
+            });
+
             setCourse({
                 ...course,
                 status: newStatus

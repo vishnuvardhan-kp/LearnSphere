@@ -287,7 +287,7 @@ const Courses = () => {
                                     </div>
 
                                     <h3
-                                        onClick={() => navigate(`/ courses / ${course.id} `)}
+                                        onClick={() => navigate(`/courses/${course.id}`)}
                                         className="text-lg font-bold text-gray-900 mb-2 group-hover:text-[#0ea5e9] transition-colors cursor-pointer"
                                     >
                                         {course.title}
@@ -350,7 +350,7 @@ const Courses = () => {
                                             <td className="py-4 px-6">
                                                 <div>
                                                     <div
-                                                        onClick={() => navigate(`/ courses / ${course.id} `)}
+                                                        onClick={() => navigate(`/courses/${course.id}`)}
                                                         className="font-bold text-gray-900 text-sm hover:text-[#0ea5e9] cursor-pointer transition-colors"
                                                     >
                                                         {course.title}

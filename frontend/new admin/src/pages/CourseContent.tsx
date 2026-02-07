@@ -1,10 +1,12 @@
-import { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, Plus, PlayCircle, FileQuestion, Edit, Trash2, Search, X, Check, Eye, Clock } from 'lucide-react';
+import api from '../services/api';
 
 const CourseContent = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
+    const location = useLocation();
 
     const [searchQuery, setSearchQuery] = useState('');
     const [filterType, setFilterType] = useState<'all' | 'video' | 'quiz'>('all');
@@ -20,15 +22,57 @@ const CourseContent = () => {
     const [showPreviewModal, setShowPreviewModal] = useState(false);
     const [previewContent, setPreviewContent] = useState<any>(null);
 
-    // Mock data - in real app, this would come from API based on course ID
-    const [courseContent, setCourseContent] = useState([
-        { id: 1, title: 'Introduction to React', type: 'video', duration: '15 mins', views: 1234 },
-        { id: 2, title: 'Components & Props', type: 'video', duration: '20 mins', views: 987 },
-        { id: 3, title: 'State Management Quiz', type: 'quiz', duration: '10 mins', views: 756 },
-        { id: 4, title: 'Hooks Deep Dive', type: 'video', duration: '25 mins', views: 2100 },
-        { id: 5, title: 'React Router Basics', type: 'video', duration: '18 mins', views: 890 },
-        { id: 6, title: 'Advanced Hooks Quiz', type: 'quiz', duration: '12 mins', views: 654 },
-    ]);
+    const [courseContent, setCourseContent] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    // Fetch Content
+    useEffect(() => {
+        const fetchContent = async () => {
+            if (!id) return;
+            try {
+                const res = await api.get(`/courses/${id}`);
+                const data = res.data;
+                // Flatten modules to get all lessons
+                const lessons: any[] = [];
+                if (data.modules && Array.isArray(data.modules)) {
+                    data.modules.forEach((mod: any) => {
+                        if (mod.lessons && Array.isArray(mod.lessons)) {
+                            lessons.push(...mod.lessons.map((l: any) => ({
+                                id: l.id,
+                                title: l.title,
+                                type: l.type.toLowerCase(),
+                                duration: l.duration || l.duration_minutes || '0m',
+                                views: 0, // Not currently in API
+                                videoLink: l.videoLink || l.content_url,
+                                moduleId: mod.id,
+                                moduleTitle: mod.title
+                            })));
+                        }
+                    });
+                }
+                setCourseContent(lessons);
+
+                // Handle Auto Play from State
+                if (location.state?.autoPlayVideo) {
+                    const videoDetails = location.state.autoPlayVideo;
+                    setPreviewContent({
+                        ...videoDetails,
+                        type: videoDetails.type.toLowerCase()
+                    });
+                    setShowPreviewModal(true);
+                    // Clear state to prevent reopening on refresh
+                    window.history.replaceState({}, document.title);
+                }
+
+            } catch (error) {
+                console.error("Error fetching course content:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchContent();
+    }, [id, location.state]);
+
 
     const filteredContent = courseContent.filter((item) => {
         const matchesSearch = item.title.toLowerCase().includes(searchQuery.toLowerCase());
@@ -36,8 +80,10 @@ const CourseContent = () => {
         return matchesSearch && matchesType;
     });
 
-    const handleDelete = (itemId: number) => {
+    const handleDelete = async (itemId: number) => {
         if (confirm('Are you sure you want to delete this content?')) {
+            // API call would go here
+            // For now, optimistically update
             setCourseContent(courseContent.filter(item => item.id !== itemId));
         }
     };
@@ -61,7 +107,8 @@ const CourseContent = () => {
             title: newContentTitle,
             type: contentType,
             duration: newContentDuration || (contentType === 'video' ? '10 mins' : '5 mins'),
-            views: 0
+            views: 0,
+            videoLink: newContentUrl
         };
 
         setCourseContent([...courseContent, newContent]);
@@ -151,86 +198,92 @@ const CourseContent = () => {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100">
-                                {filteredContent.map((item) => (
-                                    <tr
-                                        key={item.id}
-                                        onClick={() => handlePreview(item)}
-                                        className="hover:bg-gray-50 transition-colors cursor-pointer"
-                                    >
-                                        <td className="py-4 px-6">
-                                            <div className="flex items-center gap-3">
-                                                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${item.type === 'video' ? 'bg-blue-50 text-[#0ea5e9]' : 'bg-purple-50 text-purple-600'
-                                                    }`}>
-                                                    {item.type === 'video' ? (
-                                                        <PlayCircle className="w-5 h-5" />
-                                                    ) : (
-                                                        <FileQuestion className="w-5 h-5" />
-                                                    )}
-                                                </div>
-                                                <div>
-                                                    <div className="font-bold text-gray-900 text-sm">{item.title}</div>
-                                                </div>
+                                {loading ? (
+                                    <tr>
+                                        <td colSpan={5} className="py-8 text-center text-gray-500">Loading content...</td>
+                                    </tr>
+                                ) : filteredContent.length === 0 ? (
+                                    <tr>
+                                        <td colSpan={5} className="py-12 text-center">
+                                            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                                <FileQuestion className="w-8 h-8 text-gray-400" />
                                             </div>
-                                        </td>
-                                        <td className="py-4 px-6">
-                                            <span className={`text-[10px] font-bold px-2 py-1 rounded border uppercase ${item.type === 'video'
-                                                ? 'bg-blue-50 text-blue-600 border-blue-100'
-                                                : 'bg-purple-50 text-purple-600 border-purple-100'
-                                                }`}>
-                                                {item.type}
-                                            </span>
-                                        </td>
-                                        <td className="py-4 px-6 text-sm text-gray-600 font-medium">{item.duration}</td>
-                                        <td className="py-4 px-6 text-sm text-gray-600 font-medium">{item.views.toLocaleString()}</td>
-                                        <td className="py-4 px-6 text-right">
-                                            <div className="flex justify-end gap-2">
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        handlePreview(item);
-                                                    }}
-                                                    className="p-1.5 hover:bg-blue-50 rounded-lg text-gray-400 hover:text-[#0ea5e9] transition-colors"
-                                                    title="Preview"
-                                                >
-                                                    <Eye className="w-4 h-4" />
-                                                </button>
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        navigate(`/courses/${id}/content/${item.id}/edit`);
-                                                    }}
-                                                    className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-[#0ea5e9] transition-colors"
-                                                    title="Edit"
-                                                >
-                                                    <Edit className="w-4 h-4" />
-                                                </button>
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        handleDelete(item.id);
-                                                    }}
-                                                    className="p-1.5 hover:bg-red-50 rounded-lg text-gray-400 hover:text-red-600 transition-colors"
-                                                    title="Delete"
-                                                >
-                                                    <Trash2 className="w-4 h-4" />
-                                                </button>
-                                            </div>
+                                            <h3 className="text-lg font-bold text-gray-900 mb-1">No Content Found</h3>
+                                            <p className="text-gray-500">Try adjusting your search or filters</p>
                                         </td>
                                     </tr>
-                                ))}
+                                ) : (
+                                    filteredContent.map((item) => (
+                                        <tr
+                                            key={item.id}
+                                            onClick={() => handlePreview(item)}
+                                            className="hover:bg-gray-50 transition-colors cursor-pointer"
+                                        >
+                                            <td className="py-4 px-6">
+                                                <div className="flex items-center gap-3">
+                                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${item.type === 'video' ? 'bg-blue-50 text-[#0ea5e9]' : 'bg-purple-50 text-purple-600'
+                                                        }`}>
+                                                        {item.type === 'video' ? (
+                                                            <PlayCircle className="w-5 h-5" />
+                                                        ) : (
+                                                            <FileQuestion className="w-5 h-5" />
+                                                        )}
+                                                    </div>
+                                                    <div>
+                                                        <div className="font-bold text-gray-900 text-sm">{item.title}</div>
+                                                        {item.moduleTitle && <div className="text-[10px] text-gray-400 uppercase tracking-wide">{item.moduleTitle}</div>}
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td className="py-4 px-6">
+                                                <span className={`text-[10px] font-bold px-2 py-1 rounded border uppercase ${item.type === 'video'
+                                                    ? 'bg-blue-50 text-blue-600 border-blue-100'
+                                                    : 'bg-purple-50 text-purple-600 border-purple-100'
+                                                    }`}>
+                                                    {item.type}
+                                                </span>
+                                            </td>
+                                            <td className="py-4 px-6 text-sm text-gray-600 font-medium">{item.duration}</td>
+                                            <td className="py-4 px-6 text-sm text-gray-600 font-medium">{item.views.toLocaleString()}</td>
+                                            <td className="py-4 px-6 text-right">
+                                                <div className="flex justify-end gap-2">
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handlePreview(item);
+                                                        }}
+                                                        className="p-1.5 hover:bg-blue-50 rounded-lg text-gray-400 hover:text-[#0ea5e9] transition-colors"
+                                                        title="Preview"
+                                                    >
+                                                        <Eye className="w-4 h-4" />
+                                                    </button>
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            navigate(`/courses/${id}/content/${item.id}/edit`);
+                                                        }}
+                                                        className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-[#0ea5e9] transition-colors"
+                                                        title="Edit"
+                                                    >
+                                                        <Edit className="w-4 h-4" />
+                                                    </button>
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleDelete(item.id);
+                                                        }}
+                                                        className="p-1.5 hover:bg-red-50 rounded-lg text-gray-400 hover:text-red-600 transition-colors"
+                                                        title="Delete"
+                                                    >
+                                                        <Trash2 className="w-4 h-4" />
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    )))}
                             </tbody>
                         </table>
                     </div>
-
-                    {filteredContent.length === 0 && (
-                        <div className="text-center py-12">
-                            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                                <FileQuestion className="w-8 h-8 text-gray-400" />
-                            </div>
-                            <h3 className="text-lg font-bold text-gray-900 mb-1">No Content Found</h3>
-                            <p className="text-gray-500">Try adjusting your search or filters</p>
-                        </div>
-                    )}
                 </div>
 
                 {/* Stats */}
@@ -290,7 +343,7 @@ const CourseContent = () => {
                                         <Eye className="w-4 h-4" />
                                         <span className="text-xs font-bold uppercase tracking-wide">Views</span>
                                     </div>
-                                    <div className="text-lg font-bold text-gray-900">{previewContent.views.toLocaleString()}</div>
+                                    <div className="text-lg font-bold text-gray-900">{(previewContent.views || 0).toLocaleString()}</div>
                                 </div>
                                 <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
                                     <div className="flex items-center gap-2 text-gray-500 mb-1">
@@ -308,13 +361,25 @@ const CourseContent = () => {
                             {/* Video Player Simulation */}
                             {previewContent.type === 'video' && (
                                 <div className="aspect-video bg-gray-900 rounded-xl overflow-hidden relative group">
-                                    <div className="absolute inset-0 flex items-center justify-center">
-                                        <div className="text-center">
-                                            <PlayCircle className="w-20 h-20 text-white/80 mx-auto mb-3 group-hover:scale-110 transition-transform" />
-                                            <p className="text-white/60 text-sm font-medium">Video Player</p>
-                                            <p className="text-white/40 text-xs mt-1">Click to play</p>
+                                    {/* Use Iframe if available or simulate */}
+                                    {previewContent.videoLink && (previewContent.videoLink.includes('youtube') || previewContent.videoLink.includes('youtu.be')) ? (
+                                        <iframe
+                                            src={previewContent.videoLink.replace('watch?v=', 'embed/')}
+                                            className="w-full h-full"
+                                            title="Video Preview"
+                                            frameBorder="0"
+                                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                            allowFullScreen
+                                        ></iframe>
+                                    ) : (
+                                        <div className="absolute inset-0 flex items-center justify-center">
+                                            <div className="text-center">
+                                                <PlayCircle className="w-20 h-20 text-white/80 mx-auto mb-3 group-hover:scale-110 transition-transform" />
+                                                <p className="text-white/60 text-sm font-medium">Video Player Placeholder</p>
+                                                <p className="text-white/40 text-xs mt-1">URL: {previewContent.videoLink || 'No URL'}</p>
+                                            </div>
                                         </div>
-                                    </div>
+                                    )}
                                 </div>
                             )}
 
@@ -343,6 +408,7 @@ const CourseContent = () => {
                                             </div>
                                         </div>
                                     </div>
+                                    {/* Mock Question */}
                                     <div className="bg-gray-50 rounded-xl p-6 border border-gray-200">
                                         <div className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-3">Sample Question</div>
                                         <div className="bg-white rounded-lg p-4 border border-gray-200 mb-3">

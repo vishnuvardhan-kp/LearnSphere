@@ -3,8 +3,8 @@ const { pool } = require('../db');
 // Get Overview Stats
 const getOverviewStats = async (req, res) => {
     try {
-        // Total participants: Count unique users in course_enrollments
-        const totalParticipantsQuery = 'SELECT COUNT(DISTINCT user_id) as count FROM course_enrollments';
+        // Total participants: Count users with role 'LEARNER'
+        const totalParticipantsQuery = "SELECT COUNT(*) as count FROM users WHERE role = 'LEARNER'";
         const totalParticipantsResult = await pool.query(totalParticipantsQuery);
 
         // Status counts from course_progress

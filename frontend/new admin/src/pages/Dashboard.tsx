@@ -69,7 +69,11 @@ const Dashboard = () => {
                     views: 0 // Mocking views as 0 since backend doesn't track it yet
                 }));
                 setViewData(processedViewData);
-                setCoursePerformanceData(graphRes.data?.coursePerformance || []);
+                setCoursePerformanceData((graphRes.data?.coursePerformance || []).map((item: any) => ({
+                    name: item.name,
+                    students: parseInt(item.students || 0),
+                    completions: parseInt(item.completions || 0)
+                })));
 
                 // Activity
                 const processedActivity = (activityRes.data || []).map((item: any) => ({
@@ -91,7 +95,8 @@ const Dashboard = () => {
                 setParticipants(processedParticipants);
 
                 // Courses
-                setCourses(Array.isArray(coursesRes.data) ? coursesRes.data : []);
+                // backend returns { data: [], pagination: {} }
+                setCourses(coursesRes.data?.data || []);
 
                 setLoading(false);
             } catch (error) {
@@ -137,7 +142,7 @@ const Dashboard = () => {
 
     // Filter courses based on search
     const filteredCourses = courses.filter(course =>
-        course.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (course.title || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
         (course.tags && course.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase())))
     );
 
@@ -513,23 +518,29 @@ const Dashboard = () => {
                         <div className="bg-white p-6 rounded-xl border border-gray-200/60 shadow-sm h-full">
                             <h3 className="text-lg font-bold text-gray-900 mb-6">Recent Activity</h3>
                             <div className="relative pl-4 border-l-2 border-gray-100 space-y-8">
-                                {recentActivity.map((item, index) => (
-                                    <div key={index} className="relative group">
-                                        <div className={`absolute -left-[21px] top-1 w-3 h-3 rounded-full border-2 border-white box-content ${item.type === 'enrollment' ? 'bg-[#0ea5e9]' :
-                                            item.type === 'completion' ? 'bg-green-500' :
-                                                item.type === 'comment' ? 'bg-orange-500' :
-                                                    item.type === 'course' ? 'bg-purple-500' : 'bg-gray-400'
-                                            }`}></div>
-                                        <div className="group-hover:translate-x-1 transition-transform duration-200">
-                                            <p className="text-sm text-gray-800 font-bold leading-snug">{item.text}</p>
-                                            <p className="text-[10px] text-gray-400 font-medium mt-1 uppercase tracking-wide">{item.time}</p>
+                                {recentActivity.length > 0 ? (
+                                    recentActivity.map((item, index) => (
+                                        <div key={index} className="relative group">
+                                            <div className={`absolute -left-[21px] top-1 w-3 h-3 rounded-full border-2 border-white box-content ${item.type === 'enrollment' ? 'bg-[#0ea5e9]' :
+                                                item.type === 'completion' ? 'bg-green-500' :
+                                                    item.type === 'comment' ? 'bg-orange-500' :
+                                                        item.type === 'course' ? 'bg-purple-500' : 'bg-gray-400'
+                                                }`}></div>
+                                            <div className="group-hover:translate-x-1 transition-transform duration-200">
+                                                <p className="text-sm text-gray-800 font-bold leading-snug">{item.text}</p>
+                                                <p className="text-[10px] text-gray-400 font-medium mt-1 uppercase tracking-wide">{item.time}</p>
+                                            </div>
                                         </div>
-                                    </div>
-                                ))}
+                                    ))
+                                ) : (
+                                    <p className="text-sm text-gray-500 italic">No recent activity</p>
+                                )}
                             </div>
-                            <button className="w-full mt-8 py-2.5 text-xs font-bold text-gray-500 bg-gray-50 hover:bg-gray-100 hover:text-gray-900 rounded-lg transition-all border border-transparent hover:border-gray-200">
-                                View All History
-                            </button>
+                            {recentActivity.length > 0 && (
+                                <button className="w-full mt-8 py-2.5 text-xs font-bold text-gray-500 bg-gray-50 hover:bg-gray-100 hover:text-gray-900 rounded-lg transition-all border border-transparent hover:border-gray-200">
+                                    View All History
+                                </button>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -567,15 +578,15 @@ const Dashboard = () => {
                                     className="bg-white rounded-xl p-0 border border-gray-200 shadow-sm hover:shadow-md hover:border-[#0ea5e9]/50 transition-all duration-300 group cursor-pointer overflow-hidden flex flex-col"
                                 >
                                     {/* Card Header Color Stripe */}
-                                    <div className={`h-1.5 w-full ${course.tags.includes('Frontend') ? 'bg-blue-500' :
-                                        course.tags.includes('Backend') ? 'bg-purple-500' :
-                                            course.tags.includes('Design') ? 'bg-pink-500' : 'bg-green-500'
+                                    <div className={`h-1.5 w-full ${(course.tags || []).includes('Frontend') ? 'bg-blue-500' :
+                                        (course.tags || []).includes('Backend') ? 'bg-purple-500' :
+                                            (course.tags || []).includes('Design') ? 'bg-pink-500' : 'bg-green-500'
                                         }`}></div>
 
                                     <div className="p-5 flex-1 flex flex-col">
                                         <div className="flex justify-between items-start mb-3">
                                             <div className="flex flex-wrap gap-1.5">
-                                                {course.tags.slice(0, 2).map((tag, index) => (
+                                                {(course.tags || []).slice(0, 2).map((tag, index) => (
                                                     <span key={index} className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide border ${tag === 'Frontend' ? 'bg-blue-50 text-blue-600 border-blue-100' :
                                                         tag === 'Backend' ? 'bg-purple-50 text-purple-600 border-purple-100' :
                                                             'bg-gray-50 text-gray-600 border-gray-100'
@@ -595,7 +606,7 @@ const Dashboard = () => {
                                             <div className="flex items-center justify-between text-xs text-gray-500 font-medium">
                                                 <div className="flex items-center gap-1.5">
                                                     <Eye className="w-3.5 h-3.5 text-gray-400" />
-                                                    {course.views.toLocaleString()}
+                                                    {(course.views || 0).toLocaleString()}
                                                 </div>
                                                 <div className="flex items-center gap-1.5">
                                                     <Clock className="w-3.5 h-3.5 text-gray-400" />
@@ -659,7 +670,7 @@ const Dashboard = () => {
                                                 </td>
                                                 <td className="py-4 px-6">
                                                     <div className="flex flex-wrap gap-1.5">
-                                                        {course.tags.map((tag, index) => (
+                                                        {(course.tags || []).map((tag, index) => (
                                                             <span key={index} className="px-2 py-0.5 rounded-md bg-gray-100 text-gray-600 text-[10px] font-bold uppercase tracking-wide border border-gray-200">
                                                                 {tag}
                                                             </span>
@@ -668,7 +679,7 @@ const Dashboard = () => {
                                                 </td>
                                                 <td className="py-4 px-6">
                                                     <div className="flex items-center gap-4 text-xs font-medium text-gray-600">
-                                                        <span className="flex items-center gap-1"><Eye className="w-3 h-3 text-[#0ea5e9]" /> {course.views.toLocaleString()}</span>
+                                                        <span className="flex items-center gap-1"><Eye className="w-3 h-3 text-[#0ea5e9]" /> {(course.views || 0).toLocaleString()}</span>
                                                         <div className="w-16 h-1.5 bg-gray-100 rounded-full overflow-hidden">
                                                             <div className="bg-[#0ea5e9] h-full" style={{ width: '60%' }}></div>
                                                         </div>

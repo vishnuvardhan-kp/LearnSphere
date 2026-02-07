@@ -10,7 +10,7 @@ const Sidebar = () => {
     const menuItems = [
         { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
         { icon: BookOpen, label: 'Courses', path: '/courses' },
-        { icon: GraduationCap, label: 'Instructors', path: '/instructor' },
+        { icon: GraduationCap, label: 'Instructors', path: '/instructors' },
         { icon: Users, label: 'Learners', path: '/learners' },
         { icon: BarChart3, label: 'Analytics', path: '/analytics' },
         { icon: Settings, label: 'Settings', path: '/settings' },
@@ -64,7 +64,14 @@ const Sidebar = () => {
             </div>
 
             <div className="p-4 border-t border-gray-100">
-                <button className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-red-500 hover:bg-red-50 transition-colors ${collapsed ? 'justify-center' : ''}`}>
+                <button
+                    onClick={() => {
+                        localStorage.removeItem('token');
+                        localStorage.removeItem('user');
+                        navigate('/login');
+                    }}
+                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-red-500 hover:bg-red-50 transition-colors ${collapsed ? 'justify-center' : ''}`}
+                >
                     <LogOut className="w-5 h-5" />
                     {!collapsed && <span className="text-sm font-semibold">Sign Out</span>}
                 </button>

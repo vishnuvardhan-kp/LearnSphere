@@ -27,6 +27,11 @@ const Learners = () => {
     useEffect(() => {
         const fetchStudents = async () => {
             try {
+                // Correct endpoint based on user.routes.js mapping in app.js
+                // app.js: app.use('/api/users', userRoutes);
+                // user.routes.js: router.get('/learners', ...);
+                // So full path is /api/users/learners. api service adds /api base if configured, 
+                // but let's check basic usage. usually api.get('/users/learners')
                 const res = await api.get('/users/learners');
                 const data = res.data.map((user: any) => {
                     // Simulate status for demonstration since backend doesn't return it yet

@@ -1,0 +1,1 @@
+id, course_id, title, type, content_url, duration_minutes, allow_download, lesson_order, quiz_id, created_at
