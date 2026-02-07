@@ -1,0 +1,39 @@
+=== Testing PostgreSQL Connection ===
+
+Database URL: postgres://postgres:****@localhost:5432/learnsphere
+✅ Successfully connected to PostgreSQL!
+
+Database Time: Sat Feb 07 2026 21:58:26 GMT+0530 (India Standard Time)
+PostgreSQL Version: PostgreSQL 16.11
+
+=== Database Tables ===
+Found 21 tables:
+  - badges
+  - course_enrollments
+  - course_instructors
+  - course_invitations
+  - course_progress
+  - course_reviews
+  - course_tags
+  - courses
+  - lesson_attachments
+  - lesson_progress
+  - lessons
+  - payments
+  - quiz_answers
+  - quiz_attempts
+  - quiz_options
+  - quiz_questions
+  - quiz_rewards
+  - quizzes
+  - user_badges
+  - user_points
+  - users
+
+✅ Users table has 1 records
+
+=== Admin Users ===
+  - Admin User (admin@example.com) - Role: admin
+
+=== Connection Test Complete ===
+✅ Backend is properly connected to PostgreSQL!

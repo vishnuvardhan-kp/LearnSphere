@@ -18,12 +18,12 @@ const login = async (req, res) => {
         const user = result.rows[0];
 
         // 2. Check if user is ADMIN
-        if (user.role !== 'ADMIN') {
+        if (user.role !== 'admin') {
             return res.status(403).json({ error: 'Access denied. Only Admins can log in here.' });
         }
 
         // 3. Verify Password
-        const validPassword = await bcrypt.compare(password, user.password);
+        const validPassword = await bcrypt.compare(password, user.password_hash);
         if (!validPassword) {
             return res.status(401).json({ error: 'Invalid email or password' });
         }

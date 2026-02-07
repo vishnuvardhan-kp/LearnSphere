@@ -1,0 +1,9 @@
+Users table columns:
+  - id: integer
+  - name: character varying
+  - email: character varying
+  - role: character varying
+  - password_hash: text
+  - created_at: timestamp without time zone
+
+✅ Found 6 columns in users table

@@ -1,0 +1,31 @@
+=== Testing LearnSphere Authentication System ===
+
+1. Testing Admin Login (Separate System)...
+   ✅ Admin login successful!
+   User: Admin User - Role: admin
+
+2. Testing Instructor Login (Unified System)...
+   ✅ Instructor login successful!
+   User: John Instructor - Role: instructor
+
+3. Testing Learner Login (Unified System)...
+   ✅ Learner login successful!
+   User: Alice Student - Role: learner
+
+4. Testing Learner Signup (Should Work)...
+   ✅ Learner signup successful!
+   User: New Learner - Role: learner
+
+5. Testing Admin Login via Unified System (Should Fail)...
+   ✅ Correctly blocked! Admin cannot use unified login.
+
+6. Testing Instructor Login via Admin System (Should Fail)...
+   ✅ Correctly blocked! Instructor cannot use admin login.
+
+=== Authentication System Test Complete ===
+
+📋 Summary:
+   ✅ Admin has separate login at /api/admin/auth/login
+   ✅ Instructors & Learners share unified login at /api/auth/login
+   ✅ Only learners can signup at /api/auth/signup
+   ✅ Instructors are created by admin only (no signup)

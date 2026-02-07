@@ -19,9 +19,9 @@ const getOverviewStats = async (req, res) => {
         const stats = {
             total_participants: parseInt(totalParticipantsResult.rows[0].count),
             course_status_distribution: {
-                YET_TO_START: 0,
-                IN_PROGRESS: 0,
-                COMPLETED: 0
+                yet_to_start: 0,
+                in_progress: 0,
+                completed: 0
             }
         };
 
@@ -95,7 +95,7 @@ const getGraphData = async (req, res) => {
             SELECT 
                 c.title as name, 
                 COUNT(ce.id) as students,
-                (SELECT COUNT(*) FROM course_progress cp WHERE cp.course_id = c.id AND cp.status = 'COMPLETED') as completions
+                (SELECT COUNT(*) FROM course_progress cp WHERE cp.course_id = c.id AND cp.status = 'completed') as completions
             FROM courses c
             LEFT JOIN course_enrollments ce ON c.id = ce.course_id
             GROUP BY c.id
@@ -128,7 +128,7 @@ const getRecentActivity = async (req, res) => {
             FROM course_progress cp
             JOIN users u ON cp.user_id = u.id
             JOIN courses c ON cp.course_id = c.id
-            WHERE cp.status = 'COMPLETED'
+            WHERE cp.status = 'completed'
             ORDER BY time DESC
             LIMIT 10
         `;
@@ -163,7 +163,7 @@ const getAnalytics = async (req, res) => {
         // Completion Rate
         const completionQuery = `
             SELECT 
-                (CAST(COUNT(CASE WHEN status = 'COMPLETED' THEN 1 END) AS FLOAT) / NULLIF(COUNT(*), 0)) * 100 as rate 
+                (CAST(COUNT(CASE WHEN status = 'completed' THEN 1 END) AS FLOAT) / NULLIF(COUNT(*), 0)) * 100 as rate 
             FROM course_progress
         `;
         const completionResult = await pool.query(completionQuery);
@@ -190,7 +190,7 @@ const getAnalytics = async (req, res) => {
                 c.title as name,
                 COUNT(DISTINCT ce.user_id) as students,
                 COALESCE(SUM(p.amount), 0) as revenue,
-                (CAST(COUNT(CASE WHEN cp.status = 'COMPLETED' THEN 1 END) AS FLOAT) / NULLIF(COUNT(cp.*), 0)) * 100 as completion,
+                (CAST(COUNT(CASE WHEN cp.status = 'completed' THEN 1 END) AS FLOAT) / NULLIF(COUNT(cp.*), 0)) * 100 as completion,
                 COALESCE(AVG(cr.rating), 0) as rating
             FROM courses c
             LEFT JOIN course_enrollments ce ON c.id = ce.course_id

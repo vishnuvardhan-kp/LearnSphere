@@ -1,4 +1,5 @@
 const { pool } = require('../db');
+const bcrypt = require('bcrypt');
 
 // List users with optional role filtering
 const listUsers = async (req, res) => {
@@ -66,7 +67,7 @@ const getLearners = async (req, res) => {
             FROM users u
             LEFT JOIN course_enrollments ce ON u.id = ce.user_id
             LEFT JOIN course_progress cp ON u.id = cp.user_id AND ce.course_id = cp.course_id
-            WHERE u.role = 'LEARNER'
+            WHERE u.role = 'learner'
         `;
 
         const params = [];
@@ -100,7 +101,7 @@ const getInstructors = async (req, res) => {
             LEFT JOIN courses c ON u.id = c.course_admin_id
             LEFT JOIN course_enrollments ce ON c.id = ce.course_id
             LEFT JOIN course_reviews cr ON c.id = cr.course_id
-            WHERE u.role = 'INSTRUCTOR'
+            WHERE u.role = 'instructor'
         `;
 
         const params = [];
@@ -123,7 +124,6 @@ const getInstructors = async (req, res) => {
 const createInstructor = async (req, res) => {
     try {
         const { name, email, password, bio } = req.body;
-        const bcrypt = require('bcrypt');
 
         // Simple validation
         if (!name || !email || !password) {
@@ -133,8 +133,8 @@ const createInstructor = async (req, res) => {
         const hashedPassword = await bcrypt.hash(password, 10);
 
         const query = `
-            INSERT INTO users (name, email, password, role)
-            VALUES ($1, $2, $3, 'INSTRUCTOR')
+            INSERT INTO users (name, email, password_hash, role)
+            VALUES ($1, $2, $3, 'instructor')
             RETURNING id, name, email, role, created_at
         `;
 

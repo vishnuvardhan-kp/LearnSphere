@@ -16,12 +16,22 @@ const adminAuthRoutes = require('./routes/auth.routes');
 const adminCourseRoutes = require('./routes/course.routes');
 const adminUserRoutes = require('./routes/user.routes');
 const adminReportRoutes = require('./routes/report.routes');
+const userAuthRoutes = require('./routes/user-auth.routes');
 
-// Routes (to be mounted)
+// Admin Routes
 app.use('/api/admin/auth', adminAuthRoutes);
 app.use('/api/admin/courses', adminCourseRoutes);
 app.use('/api/admin/users', adminUserRoutes);
 app.use('/api/admin/reports', adminReportRoutes);
+
+// Instructor Routes
+app.use('/api/instructor', require('./routes/instructor.routes'));
+
+// Learner Routes
+app.use('/api/learner', require('./routes/learner.routes'));
+
+// Unified Auth Routes for Instructors & Learners
+app.use('/api/auth', userAuthRoutes);
 
 // Error Handling Middleware
 app.use((err, req, res, next) => {

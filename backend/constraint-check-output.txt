@@ -1,0 +1,13 @@
+Users table constraints:
+  - 2200_16400_1_not_null (CHECK)
+    Check: id IS NOT NULL
+  - 2200_16400_2_not_null (CHECK)
+    Check: name IS NOT NULL
+  - 2200_16400_3_not_null (CHECK)
+    Check: email IS NOT NULL
+  - 2200_16400_5_not_null (CHECK)
+    Check: password_hash IS NOT NULL
+  - users_role_check (CHECK)
+    Check: (((role)::text = ANY ((ARRAY['admin'::character varying, 'instructor'::character varying, 'learner'::character varying])::text[])))
+  - users_pkey (PRIMARY KEY)
+  - users_email_key (UNIQUE)
