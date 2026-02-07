@@ -72,7 +72,12 @@ export const DashboardLayout = ({ children, role }: { children: React.ReactNode,
                     )}
 
                     <button
-                        onClick={() => navigate('/')}
+                        onClick={() => {
+                            localStorage.removeItem('botfree_token');
+                            localStorage.removeItem('botfree_role');
+                            localStorage.removeItem('botfree_user');
+                            navigate('/');
+                        }}
                         className="flex items-center gap-3 w-full p-3 rounded-xl text-red-500 hover:bg-red-50 font-bold text-xs transition-all"
                     >
                         <LogOut className="w-4.5 h-4.5" />

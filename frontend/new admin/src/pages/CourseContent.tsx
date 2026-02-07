@@ -82,9 +82,13 @@ const CourseContent = () => {
 
     const handleDelete = async (itemId: number) => {
         if (confirm('Are you sure you want to delete this content?')) {
-            // API call would go here
-            // For now, optimistically update
-            setCourseContent(courseContent.filter(item => item.id !== itemId));
+            try {
+                await api.delete(`/courses/${id}/lessons/${itemId}`);
+                setCourseContent(courseContent.filter(item => item.id !== itemId));
+            } catch (error) {
+                console.error('Error deleting content:', error);
+                alert('Failed to delete content. Please try again.');
+            }
         }
     };
 
@@ -96,26 +100,41 @@ const CourseContent = () => {
         setShowAddModal(true);
     };
 
-    const handleAddContent = () => {
+    const handleAddContent = async () => {
         if (!newContentTitle.trim()) {
             alert('Please enter a title');
             return;
         }
 
-        const newContent = {
-            id: Math.max(...courseContent.map(c => c.id), 0) + 1,
-            title: newContentTitle,
-            type: contentType,
-            duration: newContentDuration || (contentType === 'video' ? '10 mins' : '5 mins'),
-            views: 0,
-            videoLink: newContentUrl
-        };
+        try {
+            const lessonData = {
+                title: newContentTitle,
+                type: contentType.toUpperCase(),
+                content_url: newContentUrl || '',
+                duration_minutes: parseInt(newContentDuration) || (contentType === 'video' ? 10 : 5)
+            };
 
-        setCourseContent([...courseContent, newContent]);
-        setShowAddModal(false);
-        setNewContentTitle('');
-        setNewContentUrl('');
-        setNewContentDuration('');
+            const res = await api.post(`/courses/${id}/lessons`, lessonData);
+            const newLesson = res.data;
+
+            const newContent = {
+                id: newLesson.id || Math.max(...courseContent.map(c => c.id), 0) + 1,
+                title: newContentTitle,
+                type: contentType,
+                duration: newContentDuration || (contentType === 'video' ? '10 mins' : '5 mins'),
+                views: 0,
+                videoLink: newContentUrl
+            };
+
+            setCourseContent([...courseContent, newContent]);
+            setShowAddModal(false);
+            setNewContentTitle('');
+            setNewContentUrl('');
+            setNewContentDuration('');
+        } catch (error) {
+            console.error('Error adding content:', error);
+            alert('Failed to add content. Please try again.');
+        }
     };
 
     const handlePreview = (item: any) => {

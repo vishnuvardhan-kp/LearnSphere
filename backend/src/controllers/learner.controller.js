@@ -424,15 +424,14 @@ const completeLessonProgress = async (req, res) => {
 
         const updateProgressQuery = `
             INSERT INTO course_progress (user_id, course_id, completion_percentage, status, start_date, completed_date)
-            VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP, $5)
+            VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP, CASE WHEN $4 = 'COMPLETED' THEN CURRENT_TIMESTAMP ELSE NULL END)
             ON CONFLICT (user_id, course_id)
             DO UPDATE SET
                 completion_percentage = $3,
                 status = $4,
-                completed_date = $5
+                completed_date = CASE WHEN $4 = 'COMPLETED' THEN CURRENT_TIMESTAMP ELSE course_progress.completed_date END
         `;
-        const completedDate = status === 'COMPLETED' ? 'CURRENT_TIMESTAMP' : null;
-        await pool.query(updateProgressQuery, [userId, courseId, completionPercentage, status, completedDate]);
+        await pool.query(updateProgressQuery, [userId, courseId, completionPercentage, status]);
 
         // Update enrollment status
         const enrollmentStatus = status === 'COMPLETED' ? 'COMPLETED' : 'IN_PROGRESS';

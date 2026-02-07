@@ -247,11 +247,102 @@ const deleteCourse = async (req, res) => {
     }
 };
 
+// Add Lesson to Course
+const addLesson = async (req, res) => {
+    const { id } = req.params; // course id
+    const { title, type, content_url, duration_minutes } = req.body;
+
+    try {
+        // Get max lesson_order for this course
+        const orderResult = await pool.query(
+            'SELECT COALESCE(MAX(lesson_order), 0) + 1 as next_order FROM lessons WHERE course_id = $1',
+            [id]
+        );
+        const lessonOrder = orderResult.rows[0].next_order;
+
+        const query = `
+            INSERT INTO lessons (course_id, title, type, content_url, duration_minutes, lesson_order)
+            VALUES ($1, $2, $3, $4, $5, $6)
+            RETURNING *
+        `;
+        const result = await pool.query(query, [
+            id,
+            title || 'Untitled Lesson',
+            (type || 'VIDEO').toUpperCase(),
+            content_url || '',
+            duration_minutes || 0,
+            lessonOrder
+        ]);
+
+        res.status(201).json(result.rows[0]);
+    } catch (error) {
+        console.error('Error adding lesson:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+};
+
+// Delete Lesson
+const deleteLesson = async (req, res) => {
+    const { id, lessonId } = req.params;
+
+    try {
+        const query = 'DELETE FROM lessons WHERE id = $1 AND course_id = $2 RETURNING id';
+        const result = await pool.query(query, [lessonId, id]);
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Lesson not found' });
+        }
+
+        res.json({ message: 'Lesson deleted successfully' });
+    } catch (error) {
+        console.error('Error deleting lesson:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+};
+
+// Update Lesson
+const updateLesson = async (req, res) => {
+    const { id, lessonId } = req.params;
+    const { title, type, content_url, duration_minutes } = req.body;
+
+    try {
+        const query = `
+            UPDATE lessons
+            SET title = COALESCE($1, title),
+                type = COALESCE($2, type),
+                content_url = COALESCE($3, content_url),
+                duration_minutes = COALESCE($4, duration_minutes)
+            WHERE id = $5 AND course_id = $6
+            RETURNING *
+        `;
+        const result = await pool.query(query, [
+            title,
+            type ? type.toUpperCase() : null,
+            content_url,
+            duration_minutes,
+            lessonId,
+            id
+        ]);
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Lesson not found' });
+        }
+
+        res.json(result.rows[0]);
+    } catch (error) {
+        console.error('Error updating lesson:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+};
+
 module.exports = {
     listCourses,
     getCourse,
     createCourse,
     updateCourse,
     togglePublish,
-    deleteCourse
+    deleteCourse,
+    addLesson,
+    deleteLesson,
+    updateLesson
 };

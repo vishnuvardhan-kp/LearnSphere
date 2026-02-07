@@ -3,12 +3,14 @@ const router = express.Router();
 const reportController = require('../controllers/report.controller');
 const { verifyToken, isAdmin } = require('../middleware/auth.middleware');
 
+// Apply auth middleware to all routes
 router.use(verifyToken, isAdmin);
-// Routes
-router.get('/stats', verifyToken, isAdmin, reportController.getOverviewStats);
-router.get('/graph-data', verifyToken, isAdmin, reportController.getGraphData);
-router.get('/detailed', verifyToken, isAdmin, reportController.getDetailedReport);
-router.get('/activity', verifyToken, isAdmin, reportController.getRecentActivity);
-router.get('/analytics', verifyToken, isAdmin, reportController.getAnalytics);
+
+// Routes - middleware already applied via router.use above
+router.get('/stats', reportController.getOverviewStats);
+router.get('/graph-data', reportController.getGraphData);
+router.get('/detailed', reportController.getDetailedReport);
+router.get('/activity', reportController.getRecentActivity);
+router.get('/analytics', reportController.getAnalytics);
 
 module.exports = router;

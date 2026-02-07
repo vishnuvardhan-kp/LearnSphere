@@ -21,12 +21,14 @@ import { InfluencerPartnerships } from './views/InfluencerPartnerships';
 import { WatchStory } from './views/WatchStory';
 import { CreateCourse } from './views/CreateCourse';
 import { UserProvider } from './context/UserContext';
+import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
   return (
     <BrowserRouter>
       <UserProvider>
         <Routes>
+          {/* Public Routes */}
           <Route path="/" element={<Home />} />
           <Route path="/about" element={<About />} />
           <Route path="/watch-story" element={<WatchStory />} />
@@ -34,20 +36,82 @@ function App() {
           <Route path="/register" element={<Register />} />
           <Route path="/onboarding" element={<InfluencerOnboarding />} />
           <Route path="/company-onboarding" element={<CompanyOnboarding />} />
-          <Route path="/company-dashboard" element={<CompanyDashboard />} />
-          <Route path="/influencer-dashboard" element={<InfluencerDashboard />} />
-          <Route path="/influencer/analytics" element={<InfluencerAnalytics />} />
-          <Route path="/influencer/partnerships" element={<InfluencerPartnerships />} />
-          <Route path="/company/ai-agent" element={<AIAgent />} />
-          <Route path="/company/funds" element={<Funds />} />
-          <Route path="/company/analytics" element={<Analytics />} />
-          <Route path="/company/campaigns" element={<Campaigns />} />
-          <Route path="/company/campaigns/new" element={<CreateCampaign />} />
-          <Route path="/company/influencers" element={<CompanyInfluencers />} />
-          <Route path="/settings" element={<Settings />} />
-          <Route path="/influencer/settings" element={<InfluencerSettings />} />
-          <Route path="/influencer/wallet" element={<InfluencerWallet />} />
-          <Route path="/influencer/create-course" element={<CreateCourse />} />
+
+          {/* Protected Instructor Routes */}
+          <Route path="/influencer-dashboard" element={
+            <ProtectedRoute allowedRoles={['influencer']}>
+              <InfluencerDashboard />
+            </ProtectedRoute>
+          } />
+          <Route path="/influencer/analytics" element={
+            <ProtectedRoute allowedRoles={['influencer']}>
+              <InfluencerAnalytics />
+            </ProtectedRoute>
+          } />
+          <Route path="/influencer/partnerships" element={
+            <ProtectedRoute allowedRoles={['influencer']}>
+              <InfluencerPartnerships />
+            </ProtectedRoute>
+          } />
+          <Route path="/influencer/settings" element={
+            <ProtectedRoute allowedRoles={['influencer']}>
+              <InfluencerSettings />
+            </ProtectedRoute>
+          } />
+          <Route path="/influencer/wallet" element={
+            <ProtectedRoute allowedRoles={['influencer']}>
+              <InfluencerWallet />
+            </ProtectedRoute>
+          } />
+          <Route path="/influencer/create-course" element={
+            <ProtectedRoute allowedRoles={['influencer']}>
+              <CreateCourse />
+            </ProtectedRoute>
+          } />
+
+          {/* Protected Learner Routes */}
+          <Route path="/company-dashboard" element={
+            <ProtectedRoute allowedRoles={['company']}>
+              <CompanyDashboard />
+            </ProtectedRoute>
+          } />
+          <Route path="/company/ai-agent" element={
+            <ProtectedRoute allowedRoles={['company']}>
+              <AIAgent />
+            </ProtectedRoute>
+          } />
+          <Route path="/company/funds" element={
+            <ProtectedRoute allowedRoles={['company']}>
+              <Funds />
+            </ProtectedRoute>
+          } />
+          <Route path="/company/analytics" element={
+            <ProtectedRoute allowedRoles={['company']}>
+              <Analytics />
+            </ProtectedRoute>
+          } />
+          <Route path="/company/campaigns" element={
+            <ProtectedRoute allowedRoles={['company']}>
+              <Campaigns />
+            </ProtectedRoute>
+          } />
+          <Route path="/company/campaigns/new" element={
+            <ProtectedRoute allowedRoles={['company']}>
+              <CreateCampaign />
+            </ProtectedRoute>
+          } />
+          <Route path="/company/influencers" element={
+            <ProtectedRoute allowedRoles={['company']}>
+              <CompanyInfluencers />
+            </ProtectedRoute>
+          } />
+
+          {/* Shared Protected Routes */}
+          <Route path="/settings" element={
+            <ProtectedRoute>
+              <Settings />
+            </ProtectedRoute>
+          } />
         </Routes>
       </UserProvider>
     </BrowserRouter>

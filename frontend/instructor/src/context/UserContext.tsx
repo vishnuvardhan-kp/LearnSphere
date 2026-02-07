@@ -40,20 +40,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 return;
             }
 
-            if (token === 'demo_token') {
-                setProfile({
-                    _id: 'demo-user-123',
-                    email: 'demo@gamil.com',
-                    role: 'influencer',
-                    name: 'Demo Influencer',
-                    handle: '@demouser',
-                    isOnboarded: true,
-                    youtubeStats: { subscribers: 1000, views: 50000 },
-                    instagramStats: { followers: 2000, engagement: '5.2%' }
-                });
-                setLoading(false);
-                return;
-            }
+            // Removed demo_token bypass - all tokens must be validated by backend
 
             // Try to load from localStorage first for speed
             if (storedUser) {
@@ -77,13 +64,12 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 const data = await response.json();
                 setProfile(data);
             } else if (response.status === 401) {
-                // If token is invalid according to server but NOT demo, clear it
-                if (token !== 'demo_token') {
-                    localStorage.removeItem('botfree_token');
-                    localStorage.removeItem('botfree_role');
-                    localStorage.removeItem('botfree_user');
-                    navigate('/login');
-                }
+                // Token is invalid, clear it and redirect to login
+                localStorage.removeItem('botfree_token');
+                localStorage.removeItem('botfree_role');
+                localStorage.removeItem('botfree_user');
+                setProfile(null);
+                navigate('/login');
             }
         } catch (err) {
             console.error('Failed to fetch profile:', err);

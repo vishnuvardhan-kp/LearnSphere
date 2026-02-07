@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Save, PlayCircle, FileQuestion, Trash2, Plus, X, Check } from 'lucide-react';
+import api from '../services/api';
 
 interface QuizQuestion {
     id: number;
@@ -58,13 +59,21 @@ const EditContent = () => {
 
     const [newTag, setNewTag] = useState('');
 
-    const handleSave = () => {
-        console.log('Saving content:', contentData);
-        if (contentData.type === 'quiz') {
-            console.log('Quiz questions:', quizQuestions);
+    const handleSave = async () => {
+        try {
+            const lessonData = {
+                title: contentData.title,
+                type: contentData.type.toUpperCase(),
+                content_url: contentData.url || '',
+                duration_minutes: parseInt(contentData.duration) || 0
+            };
+
+            await api.put(`/courses/${courseId}/lessons/${contentId}`, lessonData);
+            navigate(`/courses/${courseId}/content`);
+        } catch (error) {
+            console.error('Error saving content:', error);
+            alert('Failed to save content. Please try again.');
         }
-        // In real app, save to backend
-        navigate(`/courses/${courseId}/content`);
     };
 
     const handleAddTag = () => {

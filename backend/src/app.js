@@ -53,15 +53,15 @@ app.use('/api/instructor', instructorRoutes);
 
 // Shared routes for Instructor frontend (backwards compatibility)
 // These routes are what the Instructor frontend currently expects
-const { verifyToken } = require('./middleware/auth.middleware');
+const { verifyToken, optionalAuth } = require('./middleware/auth.middleware');
 
 app.post('/api/login', instructorController.login);
 app.get('/api/onboarding/profile', verifyToken, instructorController.getProfile);
-app.get('/api/courses', instructorController.listCourses);
-app.post('/api/courses', instructorController.createCourse);
-app.put('/api/courses/:id', instructorController.updateCourse);
-app.get('/api/courses/:id', instructorController.getCourse);
-app.get('/api/participants', instructorController.getParticipants);
+app.get('/api/courses', optionalAuth, instructorController.listCourses);
+app.post('/api/courses', verifyToken, instructorController.createCourse);
+app.put('/api/courses/:id', verifyToken, instructorController.updateCourse);
+app.get('/api/courses/:id', optionalAuth, instructorController.getCourse);
+app.get('/api/participants', verifyToken, instructorController.getParticipants);
 
 // Preview and Publish routes for Instructor
 app.get('/api/courses/:id/preview', verifyToken, instructorController.previewCourse);

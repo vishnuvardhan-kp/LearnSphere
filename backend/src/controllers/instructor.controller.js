@@ -7,6 +7,11 @@ require('dotenv').config();
 const login = async (req, res) => {
     const { email, password, role } = req.body;
 
+    // Validate required fields
+    if (!email || !password) {
+        return res.status(400).json({ error: 'Email and password are required' });
+    }
+
     try {
         const userQuery = 'SELECT * FROM users WHERE email = $1';
         const result = await pool.query(userQuery, [email]);
@@ -26,6 +31,11 @@ const login = async (req, res) => {
         // For 'company' role (which is Learner in this frontend)
         if (role === 'company' && user.role !== 'LEARNER') {
             return res.status(403).json({ error: 'Access denied. Only Learners can log in here.' });
+        }
+
+        // If no role specified in request, only allow INSTRUCTOR or LEARNER (not ADMIN)
+        if (!role && user.role === 'ADMIN') {
+            return res.status(403).json({ error: 'Admins must use the admin login portal' });
         }
 
         const validPassword = await bcrypt.compare(password, user.password);
@@ -106,13 +116,18 @@ const getProfile = async (req, res) => {
 // List Courses for Instructor (all courses, filtered by author on frontend)
 const listCourses = async (req, res) => {
     try {
-        const query = `
+        const userId = req.user?.id;
+        const userRole = req.user?.role;
+
+        // Base query
+        let query = `
             SELECT
                 c.id,
                 c.title,
                 c.short_description as description,
                 c.image_url as image,
                 c.is_published,
+                c.course_admin_id,
                 u.name as author,
                 CASE WHEN c.is_published THEN 'published' ELSE 'draft' END as status,
                 (SELECT COUNT(*) FROM lessons l WHERE l.course_id = c.id) as "totalLessons",
@@ -121,10 +136,30 @@ const listCourses = async (req, res) => {
                 (SELECT array_agg(ct.tag) FROM course_tags ct WHERE ct.course_id = c.id) as tags
             FROM courses c
             LEFT JOIN users u ON c.course_admin_id = u.id
-            ORDER BY c.created_at DESC
         `;
 
-        const result = await pool.query(query);
+        const params = [];
+        const conditions = [];
+
+        // For authenticated instructors: show their own courses (both draft and published)
+        // For unauthenticated users: only show published courses
+        if (userId && userRole === 'INSTRUCTOR') {
+            // Instructor sees: all their own courses + other published courses
+            conditions.push(`(c.course_admin_id = $${params.length + 1} OR c.is_published = true)`);
+            params.push(userId);
+        } else if (!userId) {
+            // Unauthenticated: only published courses
+            conditions.push('c.is_published = true');
+        }
+        // Authenticated non-instructors (learners): see all for now (they may need to see all)
+
+        if (conditions.length > 0) {
+            query += ` WHERE ${conditions.join(' AND ')}`;
+        }
+
+        query += ` ORDER BY c.created_at DESC`;
+
+        const result = await pool.query(query, params);
 
         // Format response for frontend
         const courses = result.rows.map(c => ({
@@ -174,8 +209,15 @@ const createCourse = async (req, res) => {
         }
 
         // Parse tags and modules if they are strings
-        const parsedTags = typeof tags === 'string' ? JSON.parse(tags) : (tags || []);
-        const parsedModules = typeof modules === 'string' ? JSON.parse(modules) : (modules || []);
+        let parsedTags = [];
+        let parsedModules = [];
+        try {
+            parsedTags = typeof tags === 'string' ? JSON.parse(tags) : (tags || []);
+            parsedModules = typeof modules === 'string' ? JSON.parse(modules) : (modules || []);
+        } catch (parseError) {
+            await client.query('ROLLBACK');
+            return res.status(400).json({ error: 'Invalid JSON format for tags or modules' });
+        }
 
         // Insert Course
         const courseQuery = `
@@ -249,8 +291,15 @@ const updateCourse = async (req, res) => {
         } = req.body;
 
         // Parse tags and modules if they are strings
-        const parsedTags = typeof tags === 'string' ? JSON.parse(tags) : (tags || []);
-        const parsedModules = typeof modules === 'string' ? JSON.parse(modules) : (modules || []);
+        let parsedTags = [];
+        let parsedModules = [];
+        try {
+            parsedTags = typeof tags === 'string' ? JSON.parse(tags) : (tags || []);
+            parsedModules = typeof modules === 'string' ? JSON.parse(modules) : (modules || []);
+        } catch (parseError) {
+            await client.query('ROLLBACK');
+            return res.status(400).json({ error: 'Invalid JSON format for tags or modules' });
+        }
 
         // Update Course
         const courseQuery = `

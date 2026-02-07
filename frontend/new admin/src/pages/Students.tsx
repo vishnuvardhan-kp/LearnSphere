@@ -238,12 +238,12 @@ const Learners = () => {
                                             <div className="flex flex-col gap-1.5 w-32">
                                                 <div className="flex justify-between items-center text-xs">
                                                     <span className="font-semibold text-gray-600">{student.completedCourses}/{student.coursesEnrolled} Courses</span>
-                                                    <span className="font-bold text-[#0ea5e9]">{Math.round((student.completedCourses / student.coursesEnrolled) * 100)}%</span>
+                                                    <span className="font-bold text-[#0ea5e9]">{student.coursesEnrolled > 0 ? Math.round((student.completedCourses / student.coursesEnrolled) * 100) : 0}%</span>
                                                 </div>
                                                 <div className="w-full bg-gray-100 h-1.5 rounded-full overflow-hidden">
                                                     <div
                                                         className="bg-[#0ea5e9] h-full rounded-full transition-all duration-500"
-                                                        style={{ width: `${(student.completedCourses / student.coursesEnrolled) * 100}%` }}
+                                                        style={{ width: `${student.coursesEnrolled > 0 ? (student.completedCourses / student.coursesEnrolled) * 100 : 0}%` }}
                                                     ></div>
                                                 </div>
                                             </div>
