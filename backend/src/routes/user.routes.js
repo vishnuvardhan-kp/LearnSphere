@@ -8,4 +8,8 @@ router.use(verifyToken, isAdmin);
 router.get('/', userController.listUsers);
 router.patch('/:id/status', userController.toggleUserStatus);
 
+router.get('/learners', userController.getLearners);
+router.get('/instructors', userController.getInstructors);
+router.post('/instructors', userController.createInstructor);
+
 module.exports = router;

@@ -1,0 +1,39 @@
+{
+    "title": "Advanced React Patterns Verification",
+    "short_description": "Verification of nested modules",
+    "description": "This course verifies that modules and lessons are correctly created.",
+    "price": 0,
+    "course_admin_id": 1,
+    "visibility": "EVERYONE",
+    "tags": [
+        "React",
+        "Verification"
+    ],
+    "modules": [
+        {
+            "title": "Module 1: Getting Started",
+            "lessons": [
+                {
+                    "title": "Lesson 1.1: Intro",
+                    "type": "VIDEO",
+                    "duration_minutes": 5
+                },
+                {
+                    "title": "Lesson 1.2: Setup",
+                    "type": "TEXT",
+                    "duration_minutes": 10
+                }
+            ]
+        },
+        {
+            "title": "Module 2: Advanced Concepts",
+            "lessons": [
+                {
+                    "title": "Lesson 2.1: Hooks",
+                    "type": "QUIZ",
+                    "duration_minutes": 15
+                }
+            ]
+        }
+    ]
+}
