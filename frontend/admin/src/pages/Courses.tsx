@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Search, Plus, LayoutGrid, List, Eye, Clock, BookOpen, Edit, Share2, MoreVertical, Filter, Download, X, Check } from 'lucide-react';
+import { fetchCourses, createCourse } from '../services/api';
 
 // Types
 interface Course {
@@ -15,93 +16,51 @@ interface Course {
     author: string;
 }
 
-// Mock Data
-const mockCourses: Course[] = [
-    {
-        id: 1,
-        title: 'Introduction to React',
-        description: 'Learn the basics of React, including components, props, and state.',
-        tags: ['Frontend', 'JavaScript'],
-        views: 1250,
-        lessons: 24,
-        duration: '8h 30m',
-        status: 'published',
-        lastUpdated: '2 hours ago',
-        author: 'Sarah Jenkins'
-    },
-    {
-        id: 2,
-        title: 'Advanced TypeScript',
-        description: 'Master advanced TypeScript concepts like generics, decorators, and utility types.',
-        tags: ['Typescript', 'Programming'],
-        views: 890,
-        lessons: 18,
-        duration: '6h 15m',
-        status: 'draft',
-        lastUpdated: '5 mins ago',
-        author: 'Mike Chen'
-    },
-    {
-        id: 3,
-        title: 'Node.js Fundamentals',
-        description: 'Build scalable network applications with Node.js.',
-        tags: ['Backend', 'JavaScript'],
-        views: 2100,
-        lessons: 32,
-        duration: '12h 45m',
-        status: 'published',
-        lastUpdated: '1 day ago',
-        author: 'Sarah Jenkins'
-    },
-    {
-        id: 4,
-        title: 'UI/UX Design Principles',
-        description: 'Fundamental principles of creating user-friendly interfaces.',
-        tags: ['Design', 'UI/UX'],
-        views: 450,
-        lessons: 15,
-        duration: '5h 20m',
-        status: 'archived',
-        lastUpdated: '1 week ago',
-        author: 'Jessica Lee'
-    },
-    {
-        id: 5,
-        title: 'Next.js 14 Masterclass',
-        description: 'Complete guide to building full-stack apps with Next.js 14.',
-        tags: ['Frontend', 'React', 'Next.js'],
-        views: 3200,
-        lessons: 45,
-        duration: '14h 20m',
-        status: 'published',
-        lastUpdated: 'Just now',
-        author: 'Mike Chen'
-    },
-    {
-        id: 6,
-        title: 'Python for Data Science',
-        description: 'Analyze data with Python, Pandas, and NumPy.',
-        tags: ['Python', 'Data Science'],
-        views: 1500,
-        lessons: 28,
-        duration: '10h 10m',
-        status: 'published',
-        lastUpdated: '3 days ago',
-        author: 'David Kim'
-    }
-];
+// Mock Data removed
 
 const Courses = () => {
     const [viewMode, setViewMode] = useState<'kanban' | 'list'>('kanban');
     const [searchQuery, setSearchQuery] = useState('');
     const [statusFilter, setStatusFilter] = useState<'all' | 'published' | 'draft' | 'archived'>('all');
+    const [loading, setLoading] = useState(true);
 
     // New Course Modal State
     const [showNewCourseModal, setShowNewCourseModal] = useState(false);
     const [newCourseTitle, setNewCourseTitle] = useState('');
     const [newCourseDescription, setNewCourseDescription] = useState('');
 
-    const [courses, setCourses] = useState<Course[]>(mockCourses);
+    const [courses, setCourses] = useState<Course[]>([]);
+
+    useEffect(() => {
+        loadCourses();
+    }, []);
+
+    const loadCourses = async () => {
+        try {
+            setLoading(true);
+            const data = await fetchCourses();
+            const coursesList = data.data || [];
+
+            const formattedCourses: Course[] = coursesList.map((c: any) => ({
+                id: c.id,
+                title: c.title,
+                description: c.short_description || c.description || 'No description',
+                tags: ['General'], // Backend doesn't support tags yet
+                views: 0,
+                lessons: c.total_lessons || 0,
+                duration: c.total_duration ? `${Math.round(c.total_duration / 60)}h` : '0h',
+                status: c.is_published ? 'published' : 'draft',
+                lastUpdated: new Date(c.updated_at).toLocaleDateString(),
+                author: 'Admin' // Placeholder until backend joins user table
+            }));
+
+            setCourses(formattedCourses);
+        } catch (error) {
+            console.error('Failed to load courses:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const filteredCourses = courses.filter((course) => {
         const matchesSearch = course.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -110,27 +69,41 @@ const Courses = () => {
         return matchesSearch && matchesStatus;
     });
 
-    const handleCreateCourse = () => {
+    const handleCreateCourse = async () => {
         if (!newCourseTitle.trim()) return;
 
-        const newCourse: Course = {
-            id: courses.length + 1,
-            title: newCourseTitle,
-            description: newCourseDescription || 'No description provided.',
-            tags: ['New'],
-            views: 0,
-            lessons: 0,
-            duration: '0h 0m',
-            status: 'draft',
-            lastUpdated: 'Just now',
-            author: 'You'
-        };
+        try {
+            const userStr = localStorage.getItem('user');
+            const user = userStr ? JSON.parse(userStr) : null;
 
-        setCourses([newCourse, ...courses]);
-        setNewCourseTitle('');
-        setNewCourseDescription('');
-        setShowNewCourseModal(false);
+            if (!user || !user.id) {
+                alert('Please log in.');
+                return;
+            }
+
+            await createCourse({
+                title: newCourseTitle,
+                description: newCourseDescription,
+                short_description: newCourseDescription.substring(0, 100),
+                price: 0,
+                course_admin_id: user.id
+            });
+
+            // Reload courses to get the new one (simplest way to ensure sync)
+            loadCourses();
+
+            setNewCourseTitle('');
+            setNewCourseDescription('');
+            setShowNewCourseModal(false);
+        } catch (error) {
+            console.error('Failed to create course:', error);
+            alert('Failed to create course.');
+        }
     };
+
+    if (loading) {
+        return <div className="min-h-screen flex items-center justify-center">Loading courses...</div>;
+    }
 
     return (
         <div className="min-h-screen bg-gray-50/50">

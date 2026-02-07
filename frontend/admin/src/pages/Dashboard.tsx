@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
 import { Search, Plus, LayoutGrid, List, Eye, Clock, BookOpen, Edit, Share2, X, Check, Users, Settings } from 'lucide-react';
+import { fetchStats, fetchCourses, createCourse, fetchGraphData } from '../services/api';
 
 // Types
 interface Course {
@@ -104,35 +105,138 @@ const Dashboard = () => {
     });
     const [showColumnPanel, setShowColumnPanel] = useState(false);
 
-    // Calculate stats
-    const stats = {
-        total: mockParticipants.length,
-        yetToStart: mockParticipants.filter(p => p.status === 'yet-to-start').length,
-        inProgress: mockParticipants.filter(p => p.status === 'in-progress').length,
-        completed: mockParticipants.filter(p => p.status === 'completed').length,
-    };
+    // State for real data
+    const [stats, setStats] = useState({
+        total: 0,
+        yetToStart: 0,
+        inProgress: 0,
+        completed: 0,
+    });
+    const [courses, setCourses] = useState<Course[]>([]);
+    const [viewDataState, setViewDataState] = useState(viewData);
+    const [coursePerformanceDataState, setCoursePerformanceDataState] = useState(coursePerformanceData);
+    const [loading, setLoading] = useState(true);
 
-    // Filter participants based on selected filter
+    useEffect(() => {
+        const loadmwData = async () => {
+            try {
+                const statsData = await fetchStats();
+                const coursesData = await fetchCourses();
+                const graphData = await fetchGraphData();
+
+                console.log('Graph Data:', graphData);
+
+                // Transform API stats to match dashboard format
+                setStats({
+                    total: statsData.total_participants || 0,
+                    yetToStart: statsData.course_status_distribution?.YET_TO_START || 0,
+                    inProgress: statsData.course_status_distribution?.IN_PROGRESS || 0,
+                    completed: statsData.course_status_distribution?.COMPLETED || 0
+                });
+
+                // Update Graph Data
+                if (graphData.enrollments && graphData.enrollments.length > 0) {
+                    // Map backend data to chart format
+                    const mappedViewData = graphData.enrollments.map((item: any) => ({
+                        name: item.day_name,
+                        views: 0, // Not available in DB
+                        enrolments: parseInt(item.count)
+                    }));
+                    setViewDataState(mappedViewData);
+                }
+
+                if (graphData.coursePerformance && graphData.coursePerformance.length > 0) {
+                    const mappedPerfData = graphData.coursePerformance.map((item: any) => ({
+                        name: item.name,
+                        students: parseInt(item.students),
+                        completions: parseInt(item.completions)
+                    }));
+                    setCoursePerformanceDataState(mappedPerfData);
+                }
+
+                // Transform API courses to match Course interface
+                // API returns { data: [], pagination: {} }
+                const coursesList = coursesData.data || [];
+                const formattedCourses = coursesList.map((c: any) => ({
+                    id: c.id,
+                    title: c.title,
+                    tags: ['Backend'], // Default tag for now
+                    views: 0, // Not in DB
+                    lessons: c.total_lessons || 0,
+                    duration: c.total_duration ? `${Math.round(c.total_duration / 60)}h` : '0h',
+                    status: c.is_published ? 'in-progress' : 'yet-to-start'
+                }));
+                setCourses(formattedCourses);
+            } catch (error) {
+                console.error("Failed to fetch dashboard data", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        loadmwData();
+    }, []);
+
+    // Filter participants (Mock for now as backend doesn't send participants list yet)
+    // const filteredParticipants = ... (keep using mock for participants table for now to avoid empty table)
     const filteredParticipants = selectedFilter === 'all'
         ? mockParticipants
         : mockParticipants.filter(p => p.status === selectedFilter);
 
     // Filter courses based on search
-    const filteredCourses = mockCourses.filter(course =>
+    const filteredCourses = courses.filter(course =>
         course.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         course.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()))
     );
 
-    const handleCreateCourse = () => {
+    // ... (existing code)
+
+    const handleCreateCourse = async () => {
         if (newCourseName.trim()) {
-            console.log('Creating course:', newCourseName);
-            setShowNewCourseModal(false);
-            setNewCourseName('');
-            // Here you would typically navigate to the course form
+            try {
+                console.log('Creating course:', newCourseName);
+
+                // Get user from local storage
+                const userStr = localStorage.getItem('user');
+                const user = userStr ? JSON.parse(userStr) : null;
+
+                if (!user || !user.id) {
+                    alert('User not authenticated. Please log in again.');
+                    return;
+                }
+
+                const newCourse = await createCourse({
+                    title: newCourseName,
+                    price: 0,
+                    description: 'New Course Description',
+                    short_description: 'A new course',
+                    image_url: '',
+                    website_url: '',
+                    visibility: 'EVERYONE',
+                    access_rule: 'OPEN',
+                    course_admin_id: user.id
+                });
+
+                console.log('Course created:', newCourse);
+
+                // Add new course to state
+                setCourses([...courses, {
+                    id: newCourse.id,
+                    title: newCourse.title,
+                    tags: ['New'],
+                    views: 0,
+                    lessons: 0,
+                    duration: '0h',
+                    status: 'yet-to-start'
+                }]);
+
+                setShowNewCourseModal(false);
+                setNewCourseName('');
+            } catch (error) {
+                console.error("Failed to create course", error);
+                alert("Failed to create course. Please try again.");
+            }
         }
     };
-
-
 
     const getStatusLabel = (status: string) => {
         const labels: Record<string, string> = {
@@ -142,6 +246,10 @@ const Dashboard = () => {
         };
         return labels[status] || status;
     };
+
+    if (loading) {
+        return <div className="min-h-screen flex items-center justify-center">Loading dashboard data...</div>;
+    }
 
     return (
         <div className="min-h-screen bg-gray-50/50">
@@ -302,7 +410,7 @@ const Dashboard = () => {
                             </div>
                             <div className="h-64">
                                 <ResponsiveContainer width="100%" height="100%">
-                                    <AreaChart data={viewData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                                    <AreaChart data={viewDataState} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                                         <defs>
                                             <linearGradient id="colorViews" x1="0" y1="0" x2="0" y2="1">
                                                 <stop offset="5%" stopColor="#0ea5e9" stopOpacity={0.1} />
@@ -337,7 +445,7 @@ const Dashboard = () => {
                             </div>
                             <div className="h-48">
                                 <ResponsiveContainer width="100%" height="100%">
-                                    <BarChart data={coursePerformanceData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }} barSize={30}>
+                                    <BarChart data={coursePerformanceDataState} margin={{ top: 0, right: 0, left: -20, bottom: 0 }} barSize={30}>
                                         <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#9ca3af', fontWeight: 600 }} dy={10} />
                                         <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#9ca3af', fontWeight: 600 }} />
                                         <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="#f3f4f6" />
